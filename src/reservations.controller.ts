@@ -6,6 +6,7 @@ import {
   NotImplementedException,
   Param,
   Post,
+  BadRequestException,
 } from "@nestjs/common";
 import type { DatabaseSync } from "node:sqlite";
 import { DATABASE } from "./database/database.module";
@@ -22,6 +23,28 @@ export class ReservationsController {
       .get(storeId);
     if (!store) {
       throw new NotFoundException("가게를 찾을 수 없습니다");
+    }
+    if (body === null || typeof body !== "object") {
+      throw new BadRequestException("요청 본문은 객체여야 합니다");
+    }
+    if (!("customerName" in body)) {
+      throw new BadRequestException("손님 이름이 필요합니다");
+    }
+    if (typeof body.customerName !== "string") {
+      throw new BadRequestException("손님 이름은 문자열이어야 합니다");
+    }
+    if (body.customerName.trim().length === 0) {
+      throw new BadRequestException("손님 이름을 입력해 주세요");
+    }
+
+    if (!("slotStart" in body)) {
+      throw new BadRequestException("예약 시작 시각이 필요합니다");
+    }
+    if (typeof body.slotStart !== "string") {
+      throw new BadRequestException("예약 시작 시각은 문자열이어야 합니다");
+    }
+    if (body.slotStart.trim().length === 0) {
+      throw new BadRequestException("예약 시작 시각을 입력해 주세요");
     }
 
     // 다음 단계에서 입력 검증, 예약 저장과 중복일 때의 응답을 구현한다.
