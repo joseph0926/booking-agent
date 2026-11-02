@@ -17,7 +17,6 @@ export class ReservationsController {
 
   @Post()
   create(@Param("storeId") storeId: string, @Body() body: unknown) {
-    // TODO: storeId로 stores를 조회하고 없으면 NotFoundException을 던진다.
     const store = this.db
       .prepare("SELECT id FROM stores WHERE id = ?")
       .get(storeId);
@@ -47,7 +46,6 @@ export class ReservationsController {
       throw new BadRequestException("예약 시작 시각을 입력해 주세요");
     }
 
-    // 다음 단계에서 입력 검증, 예약 저장과 중복일 때의 응답을 구현한다.
     throw new NotImplementedException("예약 생성 구현 대기");
   }
 }

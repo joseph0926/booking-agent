@@ -123,6 +123,4 @@ describe("같은 시간대의 예약 요청", () => {
     expect(response1.statusCode).toBe(400);
     expect(response2.statusCode).toBe(400);
   });
-  // DB 스키마를 작성한 뒤 위 테스트에서 최종 확정 예약이 1건인지도 확인한다.
-  // 요청을 함께 보내는 것만으로 조회와 저장 사이의 경쟁을 재현했다고 판단하지 않는다.
 });
