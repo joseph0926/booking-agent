@@ -45,6 +45,16 @@ export class ReservationsController {
     if (body.slotStart.trim().length === 0) {
       throw new BadRequestException("예약 시작 시각을 입력해 주세요");
     }
+    if (Number.isNaN(new Date(body.slotStart).getTime())) {
+      throw new BadRequestException("예약 시작 시각은 날짜여야합니다");
+    }
+
+    const offsetPattern = /[+-]\d{2}:\d{2}$/;
+    if (!body.slotStart.endsWith("Z") && !offsetPattern.test(body.slotStart)) {
+      throw new BadRequestException(
+        "예약 시작 시각에 시차 표기가 존재해야합니다.",
+      );
+    }
 
     throw new NotImplementedException("예약 생성 구현 대기");
   }
