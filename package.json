@@ -2,7 +2,7 @@
   "name": "booking-agent",
   "private": true,
   "type": "commonjs",
-  "packageManager": "pnpm@12.6.0",
+  "packageManager": "pnpm@12.16.1",
   "engines": {
     "node": ">=24"
   },
