@@ -123,4 +123,26 @@ describe("같은 시간대의 예약 요청", () => {
     expect(response1.statusCode).toBe(400);
     expect(response2.statusCode).toBe(400);
   });
+
+  it("예약 시작 시각이 날짜가 아니면 400을 반환한다", async () => {
+    const response = await request(app.getHttpServer())
+      .post("/stores/store-1/reservations")
+      .send({
+        slotStart: "not-a-date",
+        customerName: "홍길동",
+      });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it("예약 시작 시각에 시차 표기가 없으면 400을 반환한다", async () => {
+    const response = await request(app.getHttpServer())
+      .post("/stores/store-1/reservations")
+      .send({
+        slotStart: "2026-11-10T18:00:00",
+        customerName: "홍길동",
+      });
+
+    expect(response.statusCode).toBe(400);
+  });
 });
