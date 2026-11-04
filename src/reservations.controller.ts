@@ -3,13 +3,13 @@ import {
   Controller,
   Inject,
   NotFoundException,
-  NotImplementedException,
   Param,
   Post,
   BadRequestException,
 } from "@nestjs/common";
 import type { DatabaseSync } from "node:sqlite";
 import { DATABASE } from "./database/database.module";
+import crypto from "node:crypto";
 
 @Controller("stores/:storeId/reservations")
 export class ReservationsController {
@@ -56,6 +56,21 @@ export class ReservationsController {
       );
     }
 
-    throw new NotImplementedException("예약 생성 구현 대기");
+    const slotStart = new Date(body.slotStart).toISOString();
+    const id = crypto.randomUUID();
+
+    this.db
+      .prepare(
+        "INSERT INTO reservations (id, store_id, slot_start, customer_name, status) VALUES (?, ?, ?, ?, ?)",
+      )
+      .run(id, store.id, slotStart, body.customerName, "confirmed");
+
+    return {
+      id,
+      storeId: store.id,
+      slotStart,
+      customerName: body.customerName,
+      status: "confirmed",
+    };
   }
 }
