@@ -145,4 +145,42 @@ describe("같은 시간대의 예약 요청", () => {
 
     expect(response.statusCode).toBe(400);
   });
+
+  it("예약 시작 시각을 UTC로 통일해 저장한다", async () => {
+    const response = await request(app.getHttpServer())
+      .post("/stores/store-1/reservations")
+      .send({
+        slotStart: "2026-11-11T18:00:00+09:00",
+        customerName: "홍길동",
+      });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.body.slotStart).toBe("2026-11-11T09:00:00.000Z");
+
+    const storedSlotStart = app
+      .get<DatabaseSync>(DATABASE)
+      .prepare("SELECT slot_start FROM reservations WHERE id = ?")
+      .get(response.body.id);
+
+    expect(storedSlotStart?.slot_start).toBe("2026-11-11T09:00:00.000Z");
+  });
+
+  it("서로 다른 시간대의 예약은 모두 생성된다", async () => {
+    const response1 = await request(app.getHttpServer())
+      .post("/stores/store-1/reservations")
+      .send({
+        slotStart: "2026-11-12T09:00:00.000Z",
+        customerName: "홍길동",
+      });
+    const response2 = await request(app.getHttpServer())
+      .post("/stores/store-1/reservations")
+      .send({
+        slotStart: "2026-11-11T11:00:00.000Z",
+        customerName: "홍길동",
+      });
+
+    expect(response1.statusCode).toBe(201);
+    expect(response2.statusCode).toBe(201);
+    expect(response1.body.id).not.toEqual(response2.body.id);
+  });
 });
