@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   BadRequestException,
+  ConflictException,
 } from "@nestjs/common";
 import type { DatabaseSync } from "node:sqlite";
 import { DATABASE } from "./database/database.module";
@@ -56,14 +57,52 @@ export class ReservationsController {
       );
     }
 
+    const slotStartRegEx = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+    if (!slotStartRegEx.test(body.slotStart)) {
+      throw new BadRequestException(
+        "예약 시작 시각의 형식이 올바르지 않습니다",
+      );
+    }
+
+    const slotStartDatePart = body.slotStart.slice(0, 10);
+    const TEST_TIME_PART = "T00:00:00.000Z";
+    const testSlotStart = new Date(slotStartDatePart + TEST_TIME_PART);
+    if (Number.isNaN(testSlotStart.getTime())) {
+      throw new BadRequestException(
+        "예약 시작 시각에 유효한 날짜를 입력해 주세요",
+      );
+    }
+
     const slotStart = new Date(body.slotStart).toISOString();
+
+    if (testSlotStart.toISOString().slice(0, 10) !== slotStartDatePart) {
+      throw new BadRequestException(
+        "예약 시작 시각에 유효한 날짜를 입력해 주세요",
+      );
+    }
+
     const id = crypto.randomUUID();
 
-    this.db
-      .prepare(
-        "INSERT INTO reservations (id, store_id, slot_start, customer_name, status) VALUES (?, ?, ?, ?, ?)",
-      )
-      .run(id, store.id, slotStart, body.customerName, "confirmed");
+    try {
+      this.db
+        .prepare(
+          "INSERT INTO reservations (id, store_id, slot_start, customer_name, status) VALUES (?, ?, ?, ?, ?)",
+        )
+        .run(id, store.id, slotStart, body.customerName, "confirmed");
+    } catch (error) {
+      const isSlotConflict =
+        error instanceof Error &&
+        "errcode" in error &&
+        error.errcode === 2067 &&
+        error.message ===
+          "UNIQUE constraint failed: reservations.store_id, reservations.slot_start";
+
+      if (isSlotConflict) {
+        throw new ConflictException("이미 예약된 시간대입니다");
+      }
+
+      throw error;
+    }
 
     return {
       id,
