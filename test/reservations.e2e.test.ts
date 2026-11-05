@@ -183,4 +183,37 @@ describe("같은 시간대의 예약 요청", () => {
     expect(response2.statusCode).toBe(201);
     expect(response1.body.id).not.toEqual(response2.body.id);
   });
+
+  it("예약 시작 시각이 달력에 없는 날짜면 400을 반환한다", async () => {
+    const response = await request(app.getHttpServer())
+      .post("/stores/store-1/reservations")
+      .send({
+        slotStart: "2026-02-30T18:00:00+09:00",
+        customerName: "홍길동",
+      });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it("예약 시작 시각의 날짜와 시간 사이가 공백이면 400을 반환한다", async () => {
+    const response = await request(app.getHttpServer())
+      .post("/stores/store-1/reservations")
+      .send({
+        slotStart: "2026-11-13 18:00:00+09:00",
+        customerName: "홍길동",
+      });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it("예약 시작 시각에 초가 없으면 400을 반환한다", async () => {
+    const response = await request(app.getHttpServer())
+      .post("/stores/store-1/reservations")
+      .send({
+        slotStart: "2026-11-14T18:00+09:00",
+        customerName: "홍길동",
+      });
+
+    expect(response.statusCode).toBe(400);
+  });
 });
