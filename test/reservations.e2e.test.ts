@@ -44,6 +44,15 @@ describe("같은 시간대의 예약 요청", () => {
 
     expect(responses.filter((res) => res.statusCode === 409).length).toBe(19);
     expect(responses.filter((res) => res.statusCode === 201).length).toBe(1);
+
+    const { count } = app
+      .get<DatabaseSync>(DATABASE)
+      .prepare(
+        "SELECT COUNT(*) AS count FROM reservations WHERE store_id = ? AND slot_start = ? AND status = ?",
+      )
+      .get("store-1", "2026-11-10T09:00:00.000Z", "confirmed");
+
+    expect(count).toBe(1);
   });
 
   it("손님 이름이 없으면 400을 반환한다", async () => {
