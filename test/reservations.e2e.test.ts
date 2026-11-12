@@ -45,12 +45,17 @@ describe("같은 시간대의 예약 요청", () => {
     expect(responses.filter((res) => res.statusCode === 409).length).toBe(19);
     expect(responses.filter((res) => res.statusCode === 201).length).toBe(1);
 
-    const { count } = app
+    const row = app
       .get<DatabaseSync>(DATABASE)
       .prepare(
         "SELECT COUNT(*) AS count FROM reservations WHERE store_id = ? AND slot_start = ? AND status = ?",
       )
       .get("store-1", "2026-11-10T09:00:00.000Z", "confirmed");
+
+    if (row === undefined || typeof row.count !== "number") {
+      throw new Error("예약 건수 조회 결과가 올바르지 않습니다");
+    }
+    const count = row.count;
 
     expect(count).toBe(1);
   });
@@ -224,5 +229,48 @@ describe("같은 시간대의 예약 요청", () => {
       });
 
     expect(response.statusCode).toBe(400);
+  });
+
+  it("DB가 같은 시간대의 확정 예약 중복을 거절한다", async () => {
+    const response = await request(app.getHttpServer())
+      .post("/stores/store-1/reservations")
+      .send({
+        slotStart: "2026-11-15T09:00:00.000Z",
+        customerName: "홍길동",
+      });
+
+    expect(response.statusCode).toBe(201);
+
+    const insertReservation = () => {
+      app
+        .get<DatabaseSync>(DATABASE)
+        .prepare(
+          "INSERT INTO reservations (id, store_id, slot_start, customer_name, status) VALUES (?, ?, ?, ?, ?)",
+        )
+        .run(
+          "duplicate-reservation",
+          "store-1",
+          "2026-11-15T09:00:00.000Z",
+          "홍길동",
+          "confirmed",
+        );
+    };
+    expect(() => insertReservation()).toThrow(
+      "UNIQUE constraint failed: reservations.store_id, reservations.slot_start",
+    );
+
+    const row = app
+      .get<DatabaseSync>(DATABASE)
+      .prepare(
+        "SELECT COUNT(*) AS count FROM reservations WHERE store_id = ? AND slot_start = ? AND status = ?",
+      )
+      .get("store-1", "2026-11-15T09:00:00.000Z", "confirmed");
+
+    if (row === undefined || typeof row.count !== "number") {
+      throw new Error("예약 건수 조회 결과가 올바르지 않습니다");
+    }
+    const count = row.count;
+
+    expect(count).toBe(1);
   });
 });
