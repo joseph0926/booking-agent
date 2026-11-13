@@ -7,6 +7,8 @@ import {
   Post,
   BadRequestException,
   ConflictException,
+  Get,
+  Query,
 } from "@nestjs/common";
 import type { DatabaseSync } from "node:sqlite";
 import { DATABASE } from "./database/database.module";
@@ -112,4 +114,7 @@ export class ReservationsController {
       status: "confirmed",
     };
   }
+
+  @Get()
+  list(@Param("storeId") storeId: string, @Query("date") date: unknown) {}
 }
