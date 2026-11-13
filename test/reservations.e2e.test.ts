@@ -273,4 +273,22 @@ describe("같은 시간대의 예약 요청", () => {
 
     expect(count).toBe(1);
   });
+
+  it("지정한 날짜의 확정 예약을 조회한다", async () => {
+    const postResponse = await request(app.getHttpServer())
+      .post("/stores/store-1/reservations")
+      .send({
+        slotStart: "2026-11-16T09:00:00.000Z",
+        customerName: "홍길동",
+      });
+
+    expect(postResponse.statusCode).toBe(201);
+
+    const getResponse = await request(app.getHttpServer()).get(
+      "/stores/store-1/reservations?date=2026-11-16",
+    );
+
+    expect(getResponse.statusCode).toBe(200);
+    expect(getResponse.body).toEqual([postResponse.body]);
+  });
 });
